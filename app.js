@@ -4,9 +4,9 @@ const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json"; // @id 마킹
 const store = {
   currentPage: 1,
+  feeds: [],
 };
 
-// 1. 데이터 입력: 중복코드 개선
 function getData(url) {
   ajax.open("GET", url, false); // false: 동기, true: 비동기
   ajax.send();
@@ -14,9 +14,17 @@ function getData(url) {
   return JSON.parse(ajax.response);
 }
 
-// 함수 분리: 목록 불러오기
+// 새로운 상태 추가
+function makeFeeds(feeds) {
+  for (let i = 0; i < feeds.length; i++) {
+    feeds[i].read = false;
+  }
+  return feeds;
+}
+
+// 목록 불러오기
 function newsFeed() {
-  const newsFeed = getData(NEWS_URL); // 2. 입력 데이터 처리
+  let newsFeed = store.feeds;
   let template = `
   <div class="bg-gray-600 min-h-screen">
     <div class="bg-white text-xl">
@@ -41,6 +49,10 @@ function newsFeed() {
     </div>
   </div>
   `;
+
+  if (newsFeed.length === 0) {
+    newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+  }
 
   /* 
     페이징 처리
@@ -91,7 +103,7 @@ function newsFeed() {
   container.innerHTML = template;
 }
 
-// 함수 분리: 상세 내용 불러오기
+// 상세 내용 불러오기
 function newsDetail() {
   const id = location.hash.substr(7);
   const newsContent = getData(CONTENT_URL.replace("@id", id));
@@ -120,6 +132,14 @@ function newsDetail() {
       </div>
     </div>
   `;
+
+  // 읽음 처리
+  for (let i = 0; i < store.feeds.length; i++) {
+    if (store.feeds[i].id === Number(id)) {
+      store.feeds[i].read = true;
+      break;
+    }
+  }
 
   // called: 몇 번째로 호출된 함수인지
   // -> 대댓글, 대대댓글 등 재귀 호출된 함수들은 이 값을 이용해 padding 늘려줌
