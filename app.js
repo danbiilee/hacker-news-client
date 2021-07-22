@@ -16,12 +16,17 @@ function getData(url) {
 
 // 함수 분리: 목록 불러오기
 function newsFeed() {
-  // 2. 입력 데이터 처리
-  const newsFeed = getData(NEWS_URL);
-
-  // 3. 데이터 출력
-  const newsList = [];
-  newsList.push("<ul>");
+  const newsFeed = getData(NEWS_URL); // 2. 입력 데이터 처리
+  let template = `
+    <div class="container mx-auto p-4">
+      <h1>Hacker News</h1>
+      <ul>
+        {{__news_feed__}}
+      </ul>
+      <a href="#/page/{{__prev_page__}}">이전 페이지</a>
+      <a href="#/page/{{__next_page__}}">다음 페이지</a>
+    </div>
+  `;
 
   /* 
     페이징 처리
@@ -29,6 +34,7 @@ function newsFeed() {
     2페이지: 10 ~ 19
     ...
   */
+  const newsList = [];
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push(`
     <li>
@@ -39,21 +45,20 @@ function newsFeed() {
   `);
   }
 
-  newsList.push("</ul>");
-  newsList.push(`
-    <div>
-      <a href="#/page/${
-        store.currentPage > 1 ? store.currentPage - 1 : 1
-      }">이전 페이지</a>
-      <a href="#/page/${
-        parseInt(newsFeed.length / 10) > store.currentPage
-          ? store.currentPage + 1
-          : store.currentPage
-      }">다음 페이지</a>
-    </div>
-  `);
+  template = template.replace("{{__news_feed__}}", newsList.join(""));
+  template = template.replace(
+    "{{__prev_page__}}",
+    store.currentPage > 1 ? store.currentPage - 1 : 1
+  );
 
-  container.innerHTML = newsList.join("");
+  const lastPage =
+    parseInt(newsFeed.length / 10) + (newsFeed.length % 10 > 0 ? 1 : 0);
+  template = template.replace(
+    "{{__next_page__}}",
+    lastPage > store.currentPage ? store.currentPage + 1 : store.currentPage
+  );
+
+  container.innerHTML = template;
 }
 
 // 함수 분리: 상세 내용 불러오기
